@@ -1,0 +1,44 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PortalOrdens.Web", "PortalOrdens.Web\PortalOrdens.Web.csproj", "{8F4E2A11-6C3B-4D90-9E1A-2B7C5D8E0F41}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PortalOrdens.Application", "PortalOrdens.Application\PortalOrdens.Application.csproj", "{3C9A7B22-1D4E-4F86-A012-9E6B4C7D5A83}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PortalOrdens.Data", "PortalOrdens.Data\PortalOrdens.Data.csproj", "{5E1D8C33-2A6F-4B97-B123-0F7C5D8E6B94}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PortalOrdens.Contracts", "PortalOrdens.Contracts\PortalOrdens.Contracts.csproj", "{7A2F9D44-3B70-4C08-A234-1A8D6E9F7C05}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "database", "database", "{D4E5F607-1829-4A3B-8C4D-5E6F708192A3}"
+	ProjectSection(SolutionItems) = preProject
+		database\001_schema.sql = database\001_schema.sql
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8F4E2A11-6C3B-4D90-9E1A-2B7C5D8E0F41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F4E2A11-6C3B-4D90-9E1A-2B7C5D8E0F41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F4E2A11-6C3B-4D90-9E1A-2B7C5D8E0F41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F4E2A11-6C3B-4D90-9E1A-2B7C5D8E0F41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C9A7B22-1D4E-4F86-A012-9E6B4C7D5A83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C9A7B22-1D4E-4F86-A012-9E6B4C7D5A83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C9A7B22-1D4E-4F86-A012-9E6B4C7D5A83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C9A7B22-1D4E-4F86-A012-9E6B4C7D5A83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E1D8C33-2A6F-4B97-B123-0F7C5D8E6B94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E1D8C33-2A6F-4B97-B123-0F7C5D8E6B94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E1D8C33-2A6F-4B97-B123-0F7C5D8E6B94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E1D8C33-2A6F-4B97-B123-0F7C5D8E6B94}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A2F9D44-3B70-4C08-A234-1A8D6E9F7C05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A2F9D44-3B70-4C08-A234-1A8D6E9F7C05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A2F9D44-3B70-4C08-A234-1A8D6E9F7C05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A2F9D44-3B70-4C08-A234-1A8D6E9F7C05}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,115 @@
+openapi: 3.0.3
+info:
+  title: Portal de Ordens de Serviço API
+  version: 1.0.0
+  description: >
+    API JSON hospedada no mesmo site IIS da aplicação MVC.
+    A tela web não consome esta API: os controllers MVC chamam a camada de
+    aplicação diretamente.
+servers:
+  - url: http://localhost:5088
+paths:
+  /api/workorders:
+    get:
+      operationId: listWorkOrders
+      summary: Lista ordens de serviço
+      responses:
+        "200":
+          description: Ordens cadastradas, da mais recente para a mais antiga.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkOrder"
+    post:
+      operationId: createWorkOrder
+      summary: Abre uma ordem de serviço
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkOrder"
+      responses:
+        "201":
+          description: Ordem criada com status Aberta.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkOrder"
+        "400":
+          description: Título ou código do ativo inválido.
+  /api/workorders/{id}:
+    get:
+      operationId: getWorkOrder
+      summary: Obtém uma ordem de serviço
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Ordem encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkOrder"
+        "404":
+          description: Ordem não encontrada.
+components:
+  schemas:
+    WorkOrder:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - assetCode
+        - createdBy
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int32
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum:
+            - Aberta
+            - EmExecucao
+            - Concluida
+        assetCode:
+          type: string
+        createdBy:
+          type: string
+          description: Usuário Windows no formato DOMINIO\usuario.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    CreateWorkOrder:
+      type: object
+      required:
+        - title
+        - assetCode
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        assetCode:
+          type: string
+          maxLength: 50

@@ -1,0 +1,8 @@
+.vs/
+**/.vs/
+**/bin/
+**/obj/
+**/packages/
+*.user
+*.suo
+*.userosscache

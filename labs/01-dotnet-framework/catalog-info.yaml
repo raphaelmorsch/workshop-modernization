@@ -1,0 +1,228 @@
+# Um único import deste arquivo registra o sistema inteiro no Software Catalog:
+# domínio, sistema, componentes, API e recursos.
+# No Developer Hub: Catalog > Self-service > Register Existing Component
+# e informe a URL deste catalog-info.yaml.
+---
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: operacoes-industriais
+  title: Operações industriais
+  description: Operação e manutenção de ativos. Reúne os sistemas internos do chão de fábrica.
+  tags:
+    - legacy
+spec:
+  owner: guests
+  type: product-area
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: portal-ordens-servico
+  title: Portal de Ordens de Serviço
+  description: >
+    Monólito ASP.NET MVC 5 em .NET Framework 4.8, hospedado no IIS e ainda em produção.
+    A tela web, a API HTTP e o acesso a SQL Server e disco local fazem parte do mesmo sistema.
+  tags:
+    - dotnet
+    - net48
+    - legacy
+  annotations:
+    workshop.example/project-path: labs/01-dotnet-framework
+spec:
+  owner: guests
+  type: product
+  domain: operacoes-industriais
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: portal-ordens-iis
+  title: IIS do Portal de Ordens
+  description: >
+    Site IIS com pipeline integrado, autenticação Windows e sessão em memória do processo (InProc).
+    Porta de desenvolvimento: http://localhost:5088/
+  tags:
+    - windows
+    - iis
+    - legacy
+  annotations:
+    workshop.example/project-path: labs/01-dotnet-framework/src/PortalOrdens.Web/Web.config
+  links:
+    - url: http://localhost:5088/
+      title: Site local no IIS Express
+      icon: web
+spec:
+  type: iis-site
+  owner: guests
+  system: portal-ordens-servico
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: portal-ordens-sqlserver
+  title: SQL Server PortalOrdens
+  description: >
+    Banco PortalOrdens no SQL Server LocalDB. Tabelas WorkOrders e Attachments.
+    A connection string PortalOrdensDb usa Integrated Security e fica no Web.config.
+    Script: labs/01-dotnet-framework/src/database/001_schema.sql
+  tags:
+    - sqlserver
+    - legacy
+  annotations:
+    workshop.example/project-path: labs/01-dotnet-framework/src/database/001_schema.sql
+spec:
+  type: database
+  owner: guests
+  system: portal-ordens-servico
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: portal-ordens-anexos
+  title: Pasta local de anexos
+  description: >
+    Diretório de arquivos no Windows, lido pela chave AttachmentPath do Web.config.
+    Valor padrão: C:\PortalOrdens\anexos
+  tags:
+    - filesystem
+    - windows
+    - legacy
+  annotations:
+    workshop.example/project-path: labs/01-dotnet-framework/src/PortalOrdens.Web/Web.config
+spec:
+  type: storage
+  owner: guests
+  system: portal-ordens-servico
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: portal-ordens-api
+  title: API de ordens de serviço
+  description: >
+    API JSON em /api/workorders, publicada pelo mesmo site IIS do MVC.
+    A tela web não chama esta API: os controllers MVC usam a camada de aplicação diretamente.
+  tags:
+    - http
+    - legacy
+  annotations:
+    workshop.example/project-path: labs/01-dotnet-framework/openapi/portal-ordens-api.yaml
+spec:
+  type: openapi
+  lifecycle: production
+  owner: guests
+  system: portal-ordens-servico
+  definition:
+    $text: ./openapi/portal-ordens-api.yaml
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: portal-ordens-contratos
+  title: Contratos
+  description: Modelos compartilhados entre a interface, a API e o banco. Ordem de serviço, status e anexo.
+  tags:
+    - dotnet
+    - net48
+    - legacy
+  labels:
+    workshop.example/layer: contracts
+    workshop.example/runtime: net48
+  annotations:
+    workshop.example/project-path: labs/01-dotnet-framework/src/PortalOrdens.Contracts
+spec:
+  type: library
+  lifecycle: production
+  owner: guests
+  system: portal-ordens-servico
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: portal-ordens-dados
+  title: Acesso a dados
+  description: >
+    Biblioteca ADO.NET. Lê a connection string PortalOrdensDb do Web.config
+    e grava em SQL Server com System.Data.SqlClient.
+  tags:
+    - dotnet
+    - net48
+    - legacy
+  labels:
+    workshop.example/layer: data
+    workshop.example/runtime: net48
+  annotations:
+    workshop.example/project-path: labs/01-dotnet-framework/src/PortalOrdens.Data
+spec:
+  type: library
+  lifecycle: production
+  owner: guests
+  system: portal-ordens-servico
+  dependsOn:
+    - component:default/portal-ordens-contratos
+    - resource:default/portal-ordens-sqlserver
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: portal-ordens-aplicacao
+  title: Regras de negócio
+  description: >
+    Transições de status e gravação de anexos. Lê o usuário Windows em HttpContext.Current
+    e o diretório de anexos em AppSettings. Esse acoplamento a System.Web é parte do legado.
+  tags:
+    - dotnet
+    - net48
+    - legacy
+  labels:
+    workshop.example/layer: application
+    workshop.example/runtime: net48
+  annotations:
+    workshop.example/project-path: labs/01-dotnet-framework/src/PortalOrdens.Application
+spec:
+  type: library
+  lifecycle: production
+  owner: guests
+  system: portal-ordens-servico
+  dependsOn:
+    - component:default/portal-ordens-dados
+    - component:default/portal-ordens-contratos
+    - resource:default/portal-ordens-anexos
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: portal-ordens-web
+  title: Portal web
+  description: >
+    Aplicação ASP.NET MVC 5 e host da API no mesmo site IIS.
+    Usa System.Web, Web.config, sessão InProc e autenticação Windows.
+    O composition root instancia o repositório SQL diretamente.
+  tags:
+    - dotnet
+    - net48
+    - aspnet-mvc
+    - windows
+    - legacy
+  labels:
+    workshop.example/layer: ui
+    workshop.example/runtime: net48
+  annotations:
+    workshop.example/project-path: labs/01-dotnet-framework/src/PortalOrdens.Web
+  links:
+    - url: http://localhost:5088/
+      title: Abrir o portal
+      icon: web
+spec:
+  type: website
+  lifecycle: production
+  owner: guests
+  system: portal-ordens-servico
+  dependsOn:
+    - component:default/portal-ordens-aplicacao
+    - component:default/portal-ordens-dados
+    - component:default/portal-ordens-contratos
+    - resource:default/portal-ordens-iis
+  providesApis:
+    - api:default/portal-ordens-api

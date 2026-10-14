@@ -1,0 +1,48 @@
+﻿@model PortalOrdens.Web.Models.HomeOverview
+@{
+    ViewBag.Title = "Início";
+}
+
+<h1>Ordens de serviço</h1>
+<p class="lede">
+    Aplicação interna de manutenção. Esta versão roda no IIS com .NET Framework 4.8,
+    autenticação Windows, sessão em memória, SQL Server e anexos gravados em disco local.
+</p>
+
+@if (!string.IsNullOrWhiteSpace(Model.DatabaseError))
+{
+    <p class="banner error">Não foi possível ler o banco: @Model.DatabaseError</p>
+}
+else
+{
+    <section class="stats">
+        <article>
+            <span>Abertas</span>
+            <strong>@Model.Abertas</strong>
+        </article>
+        <article>
+            <span>Em execução</span>
+            <strong>@Model.EmExecucao</strong>
+        </article>
+        <article>
+            <span>Concluídas</span>
+            <strong>@Model.Concluidas</strong>
+        </article>
+    </section>
+}
+
+<section class="panel">
+    <h2>Sessão deste navegador</h2>
+    <p>Usuário Windows: <strong>@Model.WindowsUser</strong></p>
+    @if (Model.LastWorkOrderId.HasValue)
+    {
+        <p>
+            Última ordem consultada:
+            @Html.ActionLink("#" + Model.LastWorkOrderId.Value, "Details", "WorkOrders", new { id = Model.LastWorkOrderId.Value }, null)
+        </p>
+    }
+    else
+    {
+        <p>Nenhuma ordem foi aberta nesta sessão.</p>
+    }
+</section>

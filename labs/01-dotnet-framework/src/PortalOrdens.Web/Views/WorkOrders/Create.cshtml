@@ -1,0 +1,28 @@
+﻿@model PortalOrdens.Contracts.CreateWorkOrderRequest
+@{
+    ViewBag.Title = "Nova ordem";
+}
+
+<h1>Nova ordem de serviço</h1>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="banner error">@Html.ValidationSummary(false)</div>
+}
+
+<form method="post" action="@Url.Action("Create")">
+    @Html.AntiForgeryToken()
+    <label>
+        Título
+        <input type="text" name="title" maxlength="200" value="@Model.Title" required />
+    </label>
+    <label>
+        Código do ativo
+        <input type="text" name="assetCode" maxlength="50" value="@Model.AssetCode" required />
+    </label>
+    <label>
+        Descrição
+        <textarea name="description" rows="5">@Model.Description</textarea>
+    </label>
+    <button type="submit">Abrir ordem</button>
+</form>

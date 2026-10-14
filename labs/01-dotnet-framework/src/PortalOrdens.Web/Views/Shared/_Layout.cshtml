@@ -1,0 +1,23 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewBag.Title — Portal de Ordens</title>
+    <link rel="stylesheet" href="@Url.Content("~/Content/site.css")" />
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="@Url.Action("Index", "Home")">Portal de Ordens</a>
+        <nav>
+            <a href="@Url.Action("Index", "Home")">Início</a>
+            <a href="@Url.Action("Index", "WorkOrders")">Ordens</a>
+            <a href="@Url.Action("Create", "WorkOrders")">Nova ordem</a>
+        </nav>
+        <span class="user">@(User != null && User.Identity != null ? User.Identity.Name : "")</span>
+    </header>
+    <main>
+        @RenderBody()
+    </main>
+</body>
+</html>

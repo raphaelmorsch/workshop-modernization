@@ -1,0 +1,40 @@
+﻿@using PortalOrdens.Contracts
+@model System.Collections.Generic.IList<WorkOrder>
+@{
+    ViewBag.Title = "Ordens";
+}
+
+<h1>Ordens de serviço</h1>
+
+@if (ViewBag.DatabaseError != null)
+{
+    <p class="banner error">Não foi possível ler o banco: @ViewBag.DatabaseError</p>
+}
+
+<p><a class="button" href="@Url.Action("Create")">Nova ordem</a></p>
+
+<table>
+    <thead>
+        <tr>
+            <th>OS</th>
+            <th>Título</th>
+            <th>Ativo</th>
+            <th>Status</th>
+            <th>Aberta por</th>
+            <th>Aberta em</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@Html.ActionLink(item.Title, "Details", new { id = item.Id })</td>
+                <td>@item.AssetCode</td>
+                <td>@StatusLabels.ToLabel(item.Status)</td>
+                <td>@item.CreatedBy</td>
+                <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+            </tr>
+        }
+    </tbody>
+</table>

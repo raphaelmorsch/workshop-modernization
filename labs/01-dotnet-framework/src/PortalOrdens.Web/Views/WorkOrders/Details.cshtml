@@ -1,0 +1,89 @@
+﻿@using PortalOrdens.Contracts
+@model PortalOrdens.Web.Models.WorkOrderDetailsView
+@{
+    ViewBag.Title = "OS " + Model.WorkOrder.Id;
+    var order = Model.WorkOrder;
+}
+
+<p><a href="@Url.Action("Index")">Voltar para a lista</a></p>
+<h1>OS @order.Id — @order.Title</h1>
+
+@if (TempData["Error"] != null)
+{
+    <p class="banner error">@TempData["Error"]</p>
+}
+
+<section class="panel">
+    <dl>
+        <div><dt>Status</dt><dd>@StatusLabels.ToLabel(order.Status)</dd></div>
+        <div><dt>Ativo</dt><dd>@order.AssetCode</dd></div>
+        <div><dt>Aberta por</dt><dd>@order.CreatedBy</dd></div>
+        <div><dt>Aberta em</dt><dd>@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd></div>
+        <div><dt>Atualizada em</dt><dd>@(order.UpdatedAt.HasValue ? order.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm") : "—")</dd></div>
+    </dl>
+</section>
+
+<section class="panel">
+    <h2>Dados da ordem</h2>
+    <form method="post" action="@Url.Action("Update", new { id = order.Id })">
+        @Html.AntiForgeryToken()
+        <label>
+            Título
+            <input type="text" name="title" maxlength="200" value="@order.Title" required />
+        </label>
+        <label>
+            Código do ativo
+            <input type="text" name="assetCode" maxlength="50" value="@order.AssetCode" required />
+        </label>
+        <label>
+            Descrição
+            <textarea name="description" rows="4">@order.Description</textarea>
+        </label>
+        <button type="submit">Salvar</button>
+    </form>
+</section>
+
+<section class="panel">
+    <h2>Status</h2>
+    <form method="post" action="@Url.Action("ChangeStatus", new { id = order.Id })">
+        @Html.AntiForgeryToken()
+        <label>
+            Novo status
+            <select name="status">
+                <option value="@WorkOrderStatus.Aberta" @(order.Status == WorkOrderStatus.Aberta ? "selected" : null)>Aberta</option>
+                <option value="@WorkOrderStatus.EmExecucao" @(order.Status == WorkOrderStatus.EmExecucao ? "selected" : null)>Em execução</option>
+                <option value="@WorkOrderStatus.Concluida" @(order.Status == WorkOrderStatus.Concluida ? "selected" : null)>Concluída</option>
+            </select>
+        </label>
+        <button type="submit">Alterar status</button>
+    </form>
+    <p class="hint">Para concluir, a ordem precisa estar em execução e ter descrição.</p>
+</section>
+
+<section class="panel">
+    <h2>Anexos</h2>
+    <form method="post" action="@Url.Action("Attach", new { id = order.Id })" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <label>
+            Arquivo
+            <input type="file" name="arquivo" required />
+        </label>
+        <button type="submit">Enviar anexo</button>
+    </form>
+    @if (Model.Attachments == null || Model.Attachments.Count == 0)
+    {
+        <p>Nenhum anexo.</p>
+    }
+    else
+    {
+        <ul class="files">
+            @foreach (var file in Model.Attachments)
+            {
+                <li>
+                    <a href="@Url.Action("Download", new { id = file.Id })">@file.FileName</a>
+                    <span>@file.UploadedBy · @file.UploadedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                </li>
+            }
+        </ul>
+    }
+</section>
