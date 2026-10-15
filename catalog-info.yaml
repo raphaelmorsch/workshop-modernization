@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: workshop-modernization
+  annotations:
+    github.com/project-slug: raphaelmorsch/workshop-modernization
+spec:
+  type: other
+  lifecycle: unknown
+  owner: user:default/admin
