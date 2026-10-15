@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: portal-ordens
+  namespace: default
+  labels:
+    app: portal-ordens
+spec:
+  selector:
+    vm.kubevirt.io/name: win-2k22-iis
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: http-alt
+      port: 5088
+      targetPort: 5088
+      protocol: TCP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: portal-ordens
+  namespace: default
+  labels:
+    app: portal-ordens
+spec:
+  to:
+    kind: Service
+    name: portal-ordens
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Allow
