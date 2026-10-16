@@ -13,6 +13,8 @@ import zipfile
 from pathlib import Path
 
 REF_VERSION = "1.0.3"
+ILSPY_VERSION = "9.1.0.7988"
+PAKET_VERSION = "9.0.0"
 ROOT = Path(__file__).resolve().parents[1]
 REPO = Path(__file__).resolve().parents[3]
 SRC = ROOT / "src"
@@ -54,6 +56,36 @@ def restore_reference_assemblies() -> None:
     if not marker.is_file():
         raise SystemExit(f"mscorlib.dll não foi encontrado em {marker}")
     print(f"Reference assemblies prontos em {marker.parent}")
+
+
+def ensure_analyzer_tool(tool_id: str, version: str, file_name: str) -> None:
+    tools = Path.home() / ".dotnet" / "tools"
+    tools.mkdir(parents=True, exist_ok=True)
+    destination = tools / file_name
+    if destination.is_file():
+        print(f"{file_name} já está em {destination}")
+        return
+
+    print(f"Instalando {tool_id} {version} em {tools}")
+    subprocess.run(
+        [
+            "dotnet",
+            "tool",
+            "install",
+            "--tool-path",
+            str(tools),
+            tool_id,
+            "--version",
+            version,
+        ],
+        check=True,
+    )
+
+
+def ensure_analyzer_tools() -> None:
+    # A extensão redhat.mta-csharp só procura estes nomes em ~/.dotnet/tools.
+    ensure_analyzer_tool("ilspycmd", ILSPY_VERSION, "ilspycmd")
+    ensure_analyzer_tool("paket", PAKET_VERSION, "paket")
 
 
 def paket_executable() -> Path:
@@ -102,6 +134,7 @@ def restore_packages() -> None:
 
 def main() -> None:
     restore_reference_assemblies()
+    ensure_analyzer_tools()
     restore_packages()
     print("Restauração concluída.")
 

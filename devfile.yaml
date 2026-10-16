@@ -41,12 +41,17 @@ components:
       cpuLimit: "2"
       mountSources: true
 commands:
+  # Na subida do workspace: reference assemblies do net48, ilspycmd e paket
+  # em ~/.dotnet/tools (é só aí que a extensão MTA C# procura) e paket restore.
   - id: restore-net48
     exec:
       component: tools
       workingDir: ${PROJECT_SOURCE}
       commandLine: python3 labs/01-dotnet-framework/scripts/restore-linux-build.py
-      label: Restaurar referências do .NET Framework 4.8
+      label: Restaurar referências do .NET Framework 4.8 e ferramentas do analisador C#
       group:
         kind: build
         isDefault: true
+events:
+  postStart:
+    - restore-net48
