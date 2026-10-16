@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Baixa o targeting pack do .NET Framework 4.8 e os pacotes NuGet da solution.
+"""Baixa o targeting pack do .NET Framework 4.8 e restaura os pacotes Paket.
 
-O SDK do .NET no Linux não inclui os reference assemblies do net48 nem o
-nuget.exe. O OmniSharp usa os arquivos baixados aqui para carregar a solution.
+O SDK do .NET no Linux não inclui os reference assemblies do net48. O
+OmniSharp usa esses assemblies e as DLLs restauradas pelo Paket.
 """
 
+import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -13,6 +14,7 @@ from pathlib import Path
 
 REF_VERSION = "1.0.3"
 ROOT = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[3]
 SRC = ROOT / "src"
 PACKAGES = SRC / "packages"
 PACKAGES_CONFIG = SRC / "PortalOrdens.Web" / "packages.config"
@@ -54,7 +56,29 @@ def restore_reference_assemblies() -> None:
     print(f"Reference assemblies prontos em {marker.parent}")
 
 
+def paket_executable() -> Path:
+    found = shutil.which("paket")
+    if found:
+        return Path(found)
+    for candidate in (
+        Path.home() / ".local" / "bin" / "paket",
+        Path.home() / ".dotnet" / "tools" / "paket",
+    ):
+        if candidate.is_file():
+            return candidate
+    raise SystemExit(
+        "paket não está no PATH. Instale com: "
+        'dotnet tool install --tool-path "$HOME/.local/bin" paket --version 9.0.0'
+    )
+
+
 def restore_packages() -> None:
+    if not PACKAGES_CONFIG.is_file():
+        paket = paket_executable()
+        print(f"Restaurando pacotes com {paket}")
+        subprocess.run([str(paket), "restore"], cwd=REPO, check=True)
+        return
+
     tree = ET.parse(PACKAGES_CONFIG)
     for package in tree.getroot().findall("package"):
         package_id = package.attrib["id"]
