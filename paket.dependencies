@@ -1,0 +1,12 @@
+source https://www.nuget.org/api/v2
+
+nuget Microsoft.AspNet.Mvc 5.2.9 prerelease restriction: >= net48
+nuget Microsoft.AspNet.Razor 3.2.9 prerelease restriction: >= net48
+nuget Microsoft.AspNet.WebApi 5.2.9 prerelease restriction: >= net48
+nuget Microsoft.AspNet.WebApi.Client 5.2.9 prerelease restriction: >= net48
+nuget Microsoft.AspNet.WebApi.Core 5.2.9 prerelease restriction: >= net48
+nuget Microsoft.AspNet.WebApi.WebHost 5.2.9 prerelease restriction: >= net48
+nuget Microsoft.AspNet.WebPages 3.2.9 prerelease restriction: >= net48
+nuget Microsoft.NETFramework.ReferenceAssemblies.net48
+nuget Microsoft.Web.Infrastructure 2.0.0 prerelease restriction: >= net48
+nuget Newtonsoft.Json 13.0.3 prerelease restriction: >= net48

@@ -1,0 +1,169 @@
+[
+  {
+    "name": "dotnet-core-migration",
+    "description": "Ruleset for migrating ASP.NET MVC applications to ASP.NET Core / .NET Core.\n\nThis ruleset identifies incompatible APIs, frameworks, and patterns that need to be\nupdated when migrating from .NET Framework to .NET Core/.NET 5+.\n\nThe rules are organized into the following categories:\n- Web Framework Migration (System.Web to ASP.NET Core)\n- Authentication and Security Migration\n- Entity Framework to EF Core Migration\n- Configuration and State Management Migration\n- Runtime and Utility Class Migration\n",
+    "violations": {
+      "dotnet-core-application-state-01": {
+        "description": "Review HttpContext.Application usage - replaced by different patterns",
+        "category": "optional",
+        "labels": [
+          "konveyor.io/source=dotnet",
+          "konveyor.io/target=dotnet-core"
+        ],
+        "incidents": [
+          {
+            "uri": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Application/LocalAttachmentStore.cs",
+            "message": "HttpContext.Application (Application state) is not available in .NET Core.\nApplication state storage has different patterns in ASP.NET Core.\n\nMigration actions:\n- For application-wide state, use singleton services registered in DI\n- For caching, use IMemoryCache or IDistributedCache\n- Review if state is truly needed across the application\n- Consider using configuration or static fields for truly static data\n",
+            "codeSnip": "0 ﻿using System;\n1 using System.Configuration;\n2 using System.IO;\n3 \n4 namespace PortalOrdens.Application\n5 {\n6     public sealed class LocalAttachmentStore\n7     {\n8         public string Save(int workOrderId, string originalFileName, Stream content)\n9         {\n10             if (content == null)\n11             {\n12                 throw new ArgumentNullException(\"content\");\n13             }\n14 \n15             var safeName = Path.GetFileName(originalFileName ?? string.Empty);\n16             if (string.IsNullOrWhiteSpace(safeName) || safeName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)\n17             {\n18                 throw new ArgumentException(\"Nome de arquivo inválido.\");\n19             }\n20 \n21             var root = RootPath();\n22             Directory.CreateDirectory(root);\n23 \n24             var storedName = workOrderId.ToString(\"D6\")\n25                 + \"_\"\n26                 + DateTime.Now.ToString(\"yyyyMMddHHmmss\")\n27                 + \"_\"\n28                 + safeName;\n29             var fullPath = Path.Combine(root, storedName);\n30 \n31             using (var file = File.Create(fullPath))\n32             {\n33                 content.CopyTo(file);\n34             }\n35 \n36             return fullPath;\n37         }\n38 \n39         public byte[] Read(string storedPath)\n40         {\n41             if (string.IsNullOrWhiteSpace(storedPath))\n42             {\n43                 throw new ArgumentException(\"Caminho do anexo ausente.\");\n44             }\n45 \n46             var root = Path.GetFullPath(RootPath());\n47             var separator = Path.DirectorySeparatorChar.ToString();\n48             if (!root.EndsWith(separator, StringComparison.OrdinalIgnoreCase))\n49             {\n50                 root = root + separator;\n51             }\n52 \n53             var full = Path.GetFullPath(storedPath);\n54             if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase))\n55             {\n56                 throw new InvalidOperationException(\"Anexo fora do diretório configurado.\");\n57             }\n58 \n59             return File.ReadAllBytes(full);\n60         }\n61 \n62         private static string RootPath()\n63         {\n64             var configured = ConfigurationManager.AppSettings[\"AttachmentPath\"];\n65             if (string.IsNullOrWhiteSpace(configured))\n66             {\n67                 throw new InvalidOperationException(\n68                     \"AppSetting AttachmentPath não encontrado. Confira o Web.config.\");\n69             }\n70 \n71             return configured;\n72         }\n73     }\n74 }\n",
+            "lineNumber": 4,
+            "variables": {
+              "file": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Application/LocalAttachmentStore.cs",
+              "symbol": "PortalOrdens.Application",
+              "syntax_type": "namespace_declaration"
+            }
+          },
+          {
+            "uri": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Application/WorkOrderService.cs",
+            "message": "HttpContext.Application (Application state) is not available in .NET Core.\nApplication state storage has different patterns in ASP.NET Core.\n\nMigration actions:\n- For application-wide state, use singleton services registered in DI\n- For caching, use IMemoryCache or IDistributedCache\n- Review if state is truly needed across the application\n- Consider using configuration or static fields for truly static data\n",
+            "codeSnip": "0 ﻿using System;\n1 using System.Collections.Generic;\n2 using System.IO;\n3 using System.Web;\n4 using PortalOrdens.Contracts;\n5 using PortalOrdens.Data;\n6 \n7 namespace PortalOrdens.Application\n8 {\n9     public sealed class WorkOrderService : IWorkOrderService\n10     {\n11         private readonly IWorkOrderRepository _repository;\n12         private readonly LocalAttachmentStore _attachments;\n13 \n14         public WorkOrderService(IWorkOrderRepository repository, LocalAttachmentStore attachments)\n15         {\n16             if (repository == null)\n17             {\n18                 throw new ArgumentNullException(\"repository\");\n19             }\n20 \n21             if (attachments == null)\n22             {\n23                 throw new ArgumentNullException(\"attachments\");\n24             }\n25 \n26             _repository = repository;\n27             _attachments = attachments;\n28         }\n29 \n30         public IList<WorkOrder> List()\n31         {\n32             return _repository.List();\n33         }\n34 \n35         public WorkOrder Get(int id)\n36         {\n37             return _repository.Get(id);\n38         }\n39 \n40         public WorkOrder Open(CreateWorkOrderRequest request)\n41         {\n42             if (request == null)\n43             {\n44                 throw new ArgumentNullException(\"request\");\n45             }\n46 \n47             var title = NormalizeRequired(request.Title, \"Informe o título da ordem.\", 200, \"O título deve ter no máximo 200 caracteres.\");\n48             var assetCode = NormalizeRequired(request.AssetCode, \"Informe o código do ativo.\", 50, \"O código do ativo deve ter no máximo 50 caracteres.\");\n49             var description = NormalizeOptional(request.Description);\n50 \n51             var workOrder = new WorkOrder\n52             {\n53                 Title = title,\n54                 Description = description,\n55                 Status = WorkOrderStatus.Aberta,\n56                 AssetCode = assetCode,\n57                 CreatedBy = CurrentWindowsUser(),\n58                 CreatedAt = DateTime.Now\n59             };\n60 \n61             workOrder.Id = _repository.Insert(workOrder);\n62             return workOrder;\n63         }\n64 \n65         public WorkOrder Update(int id, string title, string description, string assetCode)\n66         {\n67             var current = Require(id);\n68             current.Title = NormalizeRequired(title, \"Informe o título da ordem.\", 200, \"O título deve ter no máximo 200 caracteres.\");\n69             current.AssetCode = NormalizeRequired(assetCode, \"Informe o código do ativo.\", 50, \"O código do ativo deve ter no máximo 50 caracteres.\");\n70             current.Description = NormalizeOptional(description);\n71             current.UpdatedAt = DateTime.Now;\n72             _repository.Update(current);\n73             return current;\n74         }\n75 \n76         public WorkOrder ChangeStatus(int id, WorkOrderStatus status)\n77         {\n78             var current = Require(id);\n79             if (current.Status == status)\n80             {\n81                 return current;\n82             }\n83 \n84             if (!CanTransition(current.Status, status))\n85             {\n86                 throw new InvalidOperationException(\"Transição de status não permitida.\");\n87             }\n88 \n89             if (status == WorkOrderStatus.Concluida && string.IsNullOrWhiteSpace(current.Description))\n90             {\n91                 throw new InvalidOperationException(\"Informe uma descrição antes de concluir a ordem.\");\n92             }\n93 \n94             current.Status = status;\n95             current.UpdatedAt = DateTime.Now;\n96             _repository.Update(current);\n97             return current;\n98         }\n99 \n100         public WorkOrderAttachment Attach(int workOrderId, string fileName, Stream content)\n101         {\n102             Require(workOrderId);\n103             var storedPath = _attachments.Save(workOrderId, fileName, content);\n104             var attachment = new WorkOrderAttachment\n105             {\n106                 WorkOrderId = workOrderId,\n107                 FileName = Path.GetFileName(fileName),\n108                 StoredPath = storedPath,\n109                 UploadedBy = CurrentWindowsUser(),\n110                 UploadedAt = DateTime.Now\n111             };\n112             attachment.Id = _repository.InsertAttachment(attachment);\n113             return attachment;\n114         }\n115 \n116         public IList<WorkOrderAttachment> ListAttachments(int workOrderId)\n117         {\n118             return _repository.ListAttachments(workOrderId);\n119         }\n120 \n121         public WorkOrderAttachment GetAttachment(int id)\n122         {\n123             return _repository.GetAttachment(id);\n124         }\n125 \n126         public byte[] ReadAttachment(WorkOrderAttachment attachment)\n127         {\n128             if (attachment == null)\n129             {\n130                 throw new ArgumentNullException(\"attachment\");\n131             }\n132 \n133             return _attachments.Read(attachment.StoredPath);\n134         }\n135 \n136         private WorkOrder Require(int id)\n137         {\n138             var current = _repository.Get(id);\n139             if (current == null)\n140             {\n141                 throw new InvalidOperationException(\"Ordem de serviço não encontrada.\");\n142             }\n143 \n144             return current;\n145         }\n146 \n147         private static bool CanTransition(WorkOrderStatus from, WorkOrderStatus to)\n148         {\n149             if (from == WorkOrderStatus.Aberta && to == WorkOrderStatus.EmExecucao)\n150             {\n151                 return true;\n152             }\n153 \n154             if (from == WorkOrderStatus.EmExecucao && to == WorkOrderStatus.Concluida)\n155             {\n156                 return true;\n157             }\n158 \n159             if (from == WorkOrderStatus.EmExecucao && to == WorkOrderStatus.Aberta)\n160             {\n161                 return true;\n162             }\n163 \n164             if (from == WorkOrderStatus.Concluida && to == WorkOrderStatus.EmExecucao)\n165             {\n166                 return true;\n167             }\n168 \n169             return false;\n170         }\n171 \n172         private static string NormalizeRequired(string value, string missingMessage, int maxLength, string lengthMessage)\n173         {\n174             var normalized = (value ?? string.Empty).Trim();\n175             if (normalized.Length == 0)\n176             {\n177                 throw new ArgumentException(missingMessage);\n178             }\n179 \n180             if (normalized.Length > maxLength)\n181             {\n182                 throw new ArgumentException(lengthMessage);\n183             }\n184 \n185             return normalized;\n186         }\n187 \n188         private static string NormalizeOptional(string value)\n189         {\n190             if (string.IsNullOrWhiteSpace(value))\n191             {\n192                 return null;\n193             }\n194 \n195             return value.Trim();\n196         }\n197 \n198         // Legado: a regra de negócio lê o usuário do pipeline ASP.NET.\n199         // HttpContext.Current não existe da mesma forma no ASP.NET Core.\n200         private static string CurrentWindowsUser()\n201         {\n202             var context = HttpContext.Current;\n203             if (context == null || context.User == null || context.User.Identity == null)\n204             {\n205                 return \"desconhecido\";\n206             }\n207 \n208             var name = context.User.Identity.Name;\n209             if (string.IsNullOrWhiteSpace(name))\n210             {\n211                 return \"desconhecido\";\n212             }\n213 \n214             return name;\n215         }\n216     }\n217 }\n",
+            "lineNumber": 7,
+            "variables": {
+              "file": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Application/WorkOrderService.cs",
+              "symbol": "PortalOrdens.Application",
+              "syntax_type": "namespace_declaration"
+            }
+          },
+          {
+            "uri": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Web/App_Start/CompositionRoot.cs",
+            "message": "HttpContext.Application (Application state) is not available in .NET Core.\nApplication state storage has different patterns in ASP.NET Core.\n\nMigration actions:\n- For application-wide state, use singleton services registered in DI\n- For caching, use IMemoryCache or IDistributedCache\n- Review if state is truly needed across the application\n- Consider using configuration or static fields for truly static data\n",
+            "codeSnip": "0 ﻿using PortalOrdens.Application;\n1 using PortalOrdens.Data;\n2 \n3 namespace PortalOrdens.Web\n4 {\n5     public static class CompositionRoot\n6     {\n7         public static IWorkOrderService WorkOrders { get; private set; }\n8 \n9         public static void Start()\n",
+            "lineNumber": 0,
+            "variables": {
+              "file": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Web/App_Start/CompositionRoot.cs",
+              "symbol": "PortalOrdens.Application",
+              "syntax_type": "import"
+            }
+          },
+          {
+            "uri": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Web/Controllers/HomeController.cs",
+            "message": "HttpContext.Application (Application state) is not available in .NET Core.\nApplication state storage has different patterns in ASP.NET Core.\n\nMigration actions:\n- For application-wide state, use singleton services registered in DI\n- For caching, use IMemoryCache or IDistributedCache\n- Review if state is truly needed across the application\n- Consider using configuration or static fields for truly static data\n",
+            "codeSnip": "0 ﻿using System;\n1 using System.Web.Mvc;\n2 using PortalOrdens.Application;\n3 using PortalOrdens.Contracts;\n4 using PortalOrdens.Web.Models;\n5 \n6 namespace PortalOrdens.Web.Controllers\n7 {\n8     public class HomeController : Controller\n9     {\n",
+            "lineNumber": 2,
+            "variables": {
+              "file": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Web/Controllers/HomeController.cs",
+              "symbol": "PortalOrdens.Application",
+              "syntax_type": "import"
+            }
+          },
+          {
+            "uri": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Web/Controllers/WorkOrdersController.cs",
+            "message": "HttpContext.Application (Application state) is not available in .NET Core.\nApplication state storage has different patterns in ASP.NET Core.\n\nMigration actions:\n- For application-wide state, use singleton services registered in DI\n- For caching, use IMemoryCache or IDistributedCache\n- Review if state is truly needed across the application\n- Consider using configuration or static fields for truly static data\n",
+            "codeSnip": "0 ﻿using System;\n1 using System.Web;\n2 using System.Web.Mvc;\n3 using PortalOrdens.Application;\n4 using PortalOrdens.Contracts;\n5 using PortalOrdens.Web.Models;\n6 \n7 namespace PortalOrdens.Web.Controllers\n8 {\n9     public class WorkOrdersController : Controller\n",
+            "lineNumber": 3,
+            "variables": {
+              "file": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Web/Controllers/WorkOrdersController.cs",
+              "symbol": "PortalOrdens.Application",
+              "syntax_type": "import"
+            }
+          },
+          {
+            "uri": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Web/Controllers/Api/WorkOrdersApiController.cs",
+            "message": "HttpContext.Application (Application state) is not available in .NET Core.\nApplication state storage has different patterns in ASP.NET Core.\n\nMigration actions:\n- For application-wide state, use singleton services registered in DI\n- For caching, use IMemoryCache or IDistributedCache\n- Review if state is truly needed across the application\n- Consider using configuration or static fields for truly static data\n",
+            "codeSnip": "0 ﻿using System;\n1 using System.Web.Http;\n2 using PortalOrdens.Application;\n3 using PortalOrdens.Contracts;\n4 \n5 namespace PortalOrdens.Web.Controllers.Api\n6 {\n7     [RoutePrefix(\"api/workorders\")]\n8     public class WorkOrdersApiController : ApiController\n9     {\n",
+            "lineNumber": 2,
+            "variables": {
+              "file": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Web/Controllers/Api/WorkOrdersApiController.cs",
+              "symbol": "PortalOrdens.Application",
+              "syntax_type": "import"
+            }
+          },
+          {
+            "uri": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Application/IWorkOrderService.cs",
+            "message": "HttpContext.Application (Application state) is not available in .NET Core.\nApplication state storage has different patterns in ASP.NET Core.\n\nMigration actions:\n- For application-wide state, use singleton services registered in DI\n- For caching, use IMemoryCache or IDistributedCache\n- Review if state is truly needed across the application\n- Consider using configuration or static fields for truly static data\n",
+            "codeSnip": "0 ﻿using System.Collections.Generic;\n1 using System.IO;\n2 using PortalOrdens.Contracts;\n3 \n4 namespace PortalOrdens.Application\n5 {\n6     public interface IWorkOrderService\n7     {\n8         IList<WorkOrder> List();\n9 \n10         WorkOrder Get(int id);\n11 \n12         WorkOrder Open(CreateWorkOrderRequest request);\n13 \n14         WorkOrder Update(int id, string title, string description, string assetCode);\n15 \n16         WorkOrder ChangeStatus(int id, WorkOrderStatus status);\n17 \n18         WorkOrderAttachment Attach(int workOrderId, string fileName, Stream content);\n19 \n20         IList<WorkOrderAttachment> ListAttachments(int workOrderId);\n21 \n22         WorkOrderAttachment GetAttachment(int id);\n23 \n24         byte[] ReadAttachment(WorkOrderAttachment attachment);\n25     }\n26 }\n",
+            "lineNumber": 4,
+            "variables": {
+              "file": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Application/IWorkOrderService.cs",
+              "symbol": "PortalOrdens.Application",
+              "syntax_type": "namespace_declaration"
+            }
+          }
+        ]
+      },
+      "dotnet-core-webapi-controller-01": {
+        "description": "System.Web.Http.ApiController must be replaced with ASP.NET Core API controller",
+        "category": "mandatory",
+        "labels": [
+          "konveyor.io/source=dotnet",
+          "konveyor.io/target=dotnet-core"
+        ],
+        "incidents": [
+          {
+            "uri": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Web/Controllers/Api/WorkOrdersApiController.cs",
+            "message": "System.Web.Http.ApiController is replaced by Microsoft.AspNetCore.Mvc.ControllerBase in ASP.NET Core.\n\nMigration actions:\n- Change base class from ApiController to ControllerBase\n- Change using from System.Web.Http to Microsoft.AspNetCore.Mvc\n- Add [ApiController] attribute to controller classes\n- Update response types to use ActionResult<T> pattern\n- Review routing (Web API routing differs from ASP.NET Core)\n",
+            "codeSnip": "34         public IHttpActionResult Post(CreateWorkOrderRequest request)\n35         {\n36             if (request == null)\n37             {\n38                 return BadRequest(\"Corpo da requisição ausente.\");\n39             }\n40 \n41             try\n42             {\n43                 var created = _workOrders.Open(request);\n",
+            "lineNumber": 44,
+            "variables": {
+              "file": "file:///projects/workshop-modernization/labs/01-dotnet-framework/src/PortalOrdens.Web/Controllers/Api/WorkOrdersApiController.cs",
+              "fqdn_class": "ApiController",
+              "fqdn_field": "Request",
+              "fqdn_namespace": "System.Web.Http",
+              "symbol": "Request.RequestUri",
+              "syntax_type": "field_reference"
+            }
+          }
+        ]
+      }
+    },
+    "unmatched": [
+      "dotnet-core-httpapplication-01",
+      "dotnet-core-optimization-01",
+      "dotnet-core-routing-01",
+      "dotnet-core-server-mappath-01",
+      "dotnet-core-httpruntime-01",
+      "dotnet-core-area-registration-01",
+      "dotnet-core-httpcontext-current-01",
+      "dotnet-core-webforms-01",
+      "dotnet-core-websecurity-01",
+      "dotnet-core-oauth-01",
+      "dotnet-core-membership-01",
+      "dotnet-core-forms-auth-01",
+      "dotnet-core-dotnetopenauth-01",
+      "dotnet-core-transactionscope-01",
+      "dotnet-core-antiforgery-01",
+      "dotnet-core-machinekey-01",
+      "dotnet-core-ef-dbcontext-01",
+      "dotnet-core-ef-initializer-01",
+      "dotnet-core-ef-dbset-01",
+      "dotnet-core-ef-spatial-01",
+      "dotnet-core-ef-lazy-loading-01",
+      "dotnet-core-webconfig-01",
+      "dotnet-core-configmanager-01",
+      "dotnet-core-connectionstrings-01",
+      "dotnet-core-session-01",
+      "dotnet-core-globalfilters-01",
+      "dotnet-core-globalconfig-01",
+      "dotnet-core-routetable-01",
+      "dotnet-core-bundletable-01",
+      "dotnet-core-install-01",
+      "dotnet-core-thread-abort-01",
+      "dotnet-core-binaryformatter-01",
+      "dotnet-core-appdomain-unload-01",
+      "dotnet-core-appdomain-01",
+      "dotnet-core-remoting-01",
+      "dotnet-core-assembly-codebase-01",
+      "dotnet-core-reflection-only-01",
+      "dotnet-core-childaction-01",
+      "dotnet-core-modelbinder-01",
+      "dotnet-core-assembly-save-01",
+      "dotnet-core-appdomain-createdomain-01",
+      "dotnet-core-multimodule-assembly-01",
+      "dotnet-core-assemblybuilder-access-01",
+      "dotnet-core-winforms-01",
+      "dotnet-core-system-drawing-01",
+      "dotnet-core-wcf-01",
+      "dotnet-core-xslt-scripts-01"
+    ],
+    "activeProfileName": "DotNet Evolver"
+  }
+]
