@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "muhammad-sammy.csharp",
+    "ms-dotnettools.vscode-dotnet-runtime",
+    "redhat.vscode-xml",
+    "redhat.vscode-yaml",
+    "42Crunch.vscode-openapi",
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-mssql",
+    "redhat.mta-vscode-extension",
+    "redhat.mta-core",
+    "redhat.mta-csharp"
+  ]
+}

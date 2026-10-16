@@ -1,0 +1,42 @@
+schemaVersion: 2.2.0
+metadata:
+  name: portal-ordens
+  displayName: Portal de Ordens de Serviço
+  description: Workspace do Portal de Ordens, monólito ASP.NET MVC 5 em .NET Framework 4.8, com suporte de edição e análise do Migration Toolkit for Applications.
+  language: C#
+  projectType: dotnet
+  version: 1.0.0
+  tags:
+    - C#
+    - .NET Framework
+    - ASP.NET
+    - MTA
+attributes:
+  controller.devfile.io/storage-type: per-user
+  # O Code - OSS do Dev Spaces instala as recommendations ao iniciar o workspace.
+  # O arquivo .vscode/extensions.json repete esta mesma lista.
+  ".vscode/extensions.json": |
+    {
+      "recommendations": [
+        "muhammad-sammy.csharp",
+        "ms-dotnettools.vscode-dotnet-runtime",
+        "redhat.vscode-xml",
+        "redhat.vscode-yaml",
+        "42Crunch.vscode-openapi",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-mssql",
+        "redhat.mta-vscode-extension",
+        "redhat.mta-core",
+        "redhat.mta-csharp"
+      ]
+    }
+components:
+  - name: tools
+    container:
+      # Alinhe a tag com a versão do Dev Spaces instalada no cluster.
+      image: registry.redhat.io/devspaces/udi-rhel9:3.30
+      memoryRequest: 2Gi
+      memoryLimit: 8Gi
+      cpuRequest: 500m
+      cpuLimit: "2"
+      mountSources: true
