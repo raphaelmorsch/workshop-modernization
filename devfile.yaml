@@ -40,3 +40,16 @@ components:
       cpuRequest: 500m
       cpuLimit: "2"
       mountSources: true
+commands:
+  - id: restore-net48
+    exec:
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: python3 labs/01-dotnet-framework/scripts/restore-linux-build.py
+      label: Restaurar referências do .NET Framework 4.8
+      group:
+        kind: build
+        isDefault: true
+events:
+  postStart:
+    - restore-net48

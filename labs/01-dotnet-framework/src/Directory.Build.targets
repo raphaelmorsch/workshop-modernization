@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!--
+    A imagem do Dev Spaces traz o SDK do .NET, sem o targeting pack do .NET Framework 4.8.
+    O postStart do devfile baixa Microsoft.NETFramework.ReferenceAssemblies.net48
+    para ~/.nuget/net48-refs. No Windows, com o Developer Pack instalado, este import não entra.
+  -->
+  <PropertyGroup>
+    <Net48ReferenceAssembliesTargets Condition="'$(Net48ReferenceAssembliesTargets)' == ''">$(HOME)/.nuget/net48-refs/build/Microsoft.NETFramework.ReferenceAssemblies.net48.targets</Net48ReferenceAssembliesTargets>
+    <Net48WindowsReferenceAssembly>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\mscorlib.dll</Net48WindowsReferenceAssembly>
+  </PropertyGroup>
+  <Import Project="$(Net48ReferenceAssembliesTargets)" Condition="!Exists('$(Net48WindowsReferenceAssembly)') And Exists('$(Net48ReferenceAssembliesTargets)')" />
+</Project>
