@@ -1,4 +1,5 @@
 {
   "dotnet.defaultSolution": "labs/01-dotnet-framework/src/PortalOrdens.sln",
-  "omnisharp.defaultLaunchSolution": "labs/01-dotnet-framework/src/PortalOrdens.sln"
+  "omnisharp.defaultLaunchSolution": "labs/01-dotnet-framework/src/PortalOrdens.sln",
+  "razor.devmode": true
 }
